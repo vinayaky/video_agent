@@ -52,6 +52,49 @@ PAID_MODELS = [
 ]
 
 
+def find_fonts():
+    search_paths = [
+        "C:/Windows/Fonts",
+        "/usr/share/fonts",
+        "/usr/local/share/fonts",
+        str(Path.home() / ".fonts"),
+    ]
+    found = []
+    for search_dir in search_paths:
+        if not os.path.isdir(search_dir):
+            continue
+        for root, dirs, files in os.walk(search_dir):
+            for f in files:
+                if f.lower().endswith(".ttf"):
+                    found.append(os.path.join(root, f))
+
+    regular = None
+    bold = None
+    for path in found:
+        name = os.path.basename(path).lower()
+        if not regular and ("arial" in name and "bold" not in name):
+            regular = path
+        if not bold and ("arialbd" in name):
+            bold = path
+    for path in found:
+        name = os.path.basename(path).lower()
+        if not regular and "dejavusans" in name and "bold" not in name:
+            regular = path
+        if not bold and "dejavusansbold" in name:
+            bold = path
+    if not regular and found:
+        regular = found[0]
+    if not bold:
+        bold = regular
+    return regular, bold
+
+
+def get_font(path, size):
+    if path and os.path.exists(path):
+        return ImageFont.truetype(path, size)
+    return ImageFont.load_default(size=size)
+
+
 def get_client():
     api_key = os.environ.get("OPENAI_API_KEY", "")
     base_url = os.environ.get("OPENAI_BASE_URL", "https://openrouter.ai/api/v1/")
@@ -149,7 +192,7 @@ def make_fallback_image(filename, prompt, width, height, font_path_bold):
         g = int(c1[1] + (c2[1] - c1[1]) * t)
         b = int(c1[2] + (c2[2] - c1[2]) * t)
         draw.line([(0, y), (width, y)], fill=(r, g, b))
-    font = ImageFont.truetype(font_path_bold, 48)
+    font = get_font(font_path_bold, 48)
     words = prompt.split()[:8]
     short = " ".join(words) + ("..." if len(prompt.split()) > 8 else "")
     bbox = draw.textbbox((0, 0), short, font=font)
@@ -162,7 +205,7 @@ def make_subtitle_image(text, width, height, font_path):
     img = Image.new("RGBA", (width, 140), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     draw.rectangle([(0, 0), (width, 140)], fill=(0, 0, 0, 160))
-    font = ImageFont.truetype(font_path, 28)
+    font = get_font(font_path, 28)
     margin = 40
     max_w = width - 2 * margin
     words = text.split()
@@ -191,12 +234,12 @@ def make_subtitle_image(text, width, height, font_path):
 def make_title_clip(title_str, duration, width, height, font_path_bold, font_path):
     bg = Image.new("RGB", (width, height), (10, 15, 30))
     draw = ImageDraw.Draw(bg)
-    font_big = ImageFont.truetype(font_path_bold, min(52, width // 25))
-    font_small = ImageFont.truetype(font_path, min(22, width // 55))
+    font_big = get_font(font_path_bold, min(52, width // 25))
+    font_small = get_font(font_path, min(22, width // 55))
     bbox = draw.textbbox((0, 0), title_str, font=font_big)
     tw = bbox[2] - bbox[0]
     if tw > width - 100:
-        font_big = ImageFont.truetype(font_path_bold, min(36, width // 35))
+        font_big = get_font(font_path_bold, min(36, width // 35))
         bbox = draw.textbbox((0, 0), title_str, font=font_big)
         tw = bbox[2] - bbox[0]
     draw.text(((width - tw) // 2, height // 2 - 60), title_str, fill="white", font=font_big)
@@ -214,7 +257,7 @@ def make_title_clip(title_str, duration, width, height, font_path_bold, font_pat
 def make_end_clip(duration, width, height, font_path_bold):
     bg = Image.new("RGB", (width, height), (10, 15, 30))
     draw = ImageDraw.Draw(bg)
-    font = ImageFont.truetype(font_path_bold, min(44, width // 30))
+    font = get_font(font_path_bold, min(44, width // 30))
     text = "Thank You For Watching"
     bbox = draw.textbbox((0, 0), text, font=font)
     tw = bbox[2] - bbox[0]
@@ -253,11 +296,10 @@ def build_video(script, settings, progress_callback=None):
     lang_code = settings["language"]
     fade_dur = 0.5
 
-    font_path = "C:/Windows/Fonts/arial.ttf"
-    font_path_bold = "C:/Windows/Fonts/arialbd.ttf"
-    if not os.path.exists(font_path):
-        font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-        font_path_bold = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    font_path, font_path_bold = find_fonts()
+    if not font_path:
+        font_path = "C:/Windows/Fonts/arial.ttf"
+        font_path_bold = "C:/Windows/Fonts/arialbd.ttf"
 
     work_dir = TEMP_DIR / f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     (work_dir / "audio").mkdir(parents=True)
