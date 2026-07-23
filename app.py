@@ -453,6 +453,8 @@ def main():
                 try:
                     script = generate_script(topic, model, client)
                     st.session_state.script = script
+                    st.session_state.video_path = None
+                    st.session_state.chat_history = []
                     st.session_state.step = 2
                     st.success(f"Script generated: {script['title']} ({len(script['segments'])} segments)")
                 except Exception as e:
@@ -473,11 +475,12 @@ def main():
                     "Image Prompt": seg["image_prompt"],
                 })
 
+            editor_key = f"editor_{len(script['segments'])}_{hash(script['title'])}"
             edited_df = st.data_editor(
                 seg_data,
                 num_rows="dynamic",
                 use_container_width=True,
-                key="script_editor",
+                key=editor_key,
                 column_config={
                     "#": st.column_config.NumberColumn("#", disabled=True),
                     "Narration": st.column_config.TextColumn("Narration", width="medium"),
