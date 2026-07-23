@@ -1,6 +1,8 @@
 audio/
 images/
 videos/
+history/
+temp_output/
 *.mp4
 *.mp3
 *.wav

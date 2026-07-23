@@ -5,7 +5,7 @@ from openai import OpenAI
 load_dotenv(override=True)
 client = OpenAI()
 
-topic = input("What topic do you want the video to be about: ")
+topic = "artificial intelligence"
 
 prompt = f"""Create a short video script about: {topic}
 
@@ -44,4 +44,6 @@ with open("video_script.json", "w", encoding="utf-8") as f:
 
 print(f"Title: {script['title']}")
 print(f"Generated {len(script['segments'])} segments")
-print("Files saved: generated_text.txt, video_script.json")
+for i, seg in enumerate(script["segments"]):
+    print(f"  {i+1}. {seg['narration'][:60]}...")
+print("Files saved!")

@@ -1,8 +1,16 @@
 import os, json, base64, wave, struct, math
 from dotenv import load_dotenv
 from openai import OpenAI
+from gtts import gTTS
+from moviepy import (
+    ImageClip, AudioFileClip, CompositeVideoClip,
+    concatenate_videoclips, CompositeAudioClip,
+    vfx, afx
+)
+from PIL import Image, ImageDraw, ImageFont
+import numpy as np
 
-load_dotenv()
+load_dotenv(override=True)
 client = OpenAI()
 
 WIDTH, HEIGHT = 1280, 720
@@ -40,22 +48,39 @@ def generate_ai_image(prompt, filename):
                     f.write(img_bytes)
                 print(f"  AI image saved: {filename}")
                 return True
-    except Exception as e:
-        print(f"  AI image failed: {e}")
+    except Exception:
+        pass
 
-    print("  Using fallback gradient image")
+    print("  Using styled gradient image")
     return False
 
 
-def make_fallback_image(filename):
+def make_fallback_image(filename, prompt=""):
+    gradient_sets = [
+        ((26, 26, 46), (83, 52, 131)),
+        ((15, 52, 96), (233, 69, 96)),
+        ((10, 25, 47), (42, 86, 140)),
+        ((44, 22, 62), (160, 50, 80)),
+        ((20, 40, 70), (100, 60, 140)),
+        ((30, 15, 50), (180, 50, 70)),
+        ((10, 30, 60), (60, 100, 160)),
+    ]
+    idx = hash(prompt) % len(gradient_sets) if prompt else 0
+    c1, c2 = gradient_sets[idx]
     img = Image.new("RGB", (WIDTH, HEIGHT))
     draw = ImageDraw.Draw(img)
-    c1, c2 = (26, 26, 46), (83, 52, 131)
     for y in range(HEIGHT):
-        r = int(c1[0] + (c2[0] - c1[0]) * y / HEIGHT)
-        g = int(c1[1] + (c2[1] - c1[1]) * y / HEIGHT)
-        b = int(c1[2] + (c2[2] - c1[2]) * y / HEIGHT)
+        t = y / HEIGHT
+        r = int(c1[0] + (c2[0] - c1[0]) * t)
+        g = int(c1[1] + (c2[1] - c1[1]) * t)
+        b = int(c1[2] + (c2[2] - c1[2]) * t)
         draw.line([(0, y), (WIDTH, y)], fill=(r, g, b))
+    font = ImageFont.truetype(FONT_PATH_BOLD, 48)
+    words = prompt.split()[:8]
+    short = " ".join(words) + ("..." if len(prompt.split()) > 8 else "")
+    bbox = draw.textbbox((0, 0), short, font=font)
+    tw = bbox[2] - bbox[0]
+    draw.text(((WIDTH - tw) // 2, HEIGHT // 2 - 30), short, fill=(255, 255, 255, 180), font=font)
     img.save(filename)
 
 
@@ -159,7 +184,7 @@ for i, seg in enumerate(segments):
 
     img_file = f"images/segment{i + 1}.jpg"
     if not generate_ai_image(seg["image_prompt"], img_file):
-        make_fallback_image(img_file)
+        make_fallback_image(img_file, seg["image_prompt"])
 
     audio_file = f"audio/voiceover{i + 1}.mp3"
     tts = gTTS(text=seg["narration"], lang="en", slow=False)
