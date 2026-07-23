@@ -1,0 +1,11 @@
+audio/
+images/
+videos/
+*.mp4
+*.mp3
+*.wav
+*.jpg
+__pycache__/
+*.pyc
+generated_text.txt
+video_script.json
