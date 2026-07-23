@@ -1,18 +1,8 @@
 import os, json, base64, wave, struct, math
+from dotenv import load_dotenv
 from openai import OpenAI
-from gtts import gTTS
-from moviepy import (
-    ImageClip, AudioFileClip, CompositeVideoClip,
-    concatenate_videoclips, CompositeAudioClip,
-    vfx, afx
-)
-from PIL import Image, ImageDraw, ImageFont
-import numpy as np
 
-if not os.environ.get("OPENAI_API_KEY"):
-    raise RuntimeError("Set OPENAI_API_KEY environment variable first")
-os.environ.setdefault("OPENAI_BASE_URL", "https://openrouter.ai/api/v1/")
-
+load_dotenv()
 client = OpenAI()
 
 WIDTH, HEIGHT = 1280, 720

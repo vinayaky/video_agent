@@ -1,10 +1,8 @@
 import os, json
+from dotenv import load_dotenv
 from openai import OpenAI
 
-if not os.environ.get("OPENAI_API_KEY"):
-    raise RuntimeError("Set OPENAI_API_KEY environment variable first")
-os.environ.setdefault("OPENAI_BASE_URL", "https://openrouter.ai/api/v1/")
-
+load_dotenv()
 client = OpenAI()
 
 topic = input("What topic do you want the video to be about: ")

@@ -9,3 +9,4 @@ __pycache__/
 *.pyc
 generated_text.txt
 video_script.json
+.env
