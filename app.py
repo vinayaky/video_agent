@@ -486,7 +486,7 @@ def main():
             )
 
             updated_segments = []
-            for row in updated_df:
+            for row in (edited_df or []):
                 updated_segments.append({
                     "narration": row["Narration"],
                     "image_prompt": row["Image Prompt"],
